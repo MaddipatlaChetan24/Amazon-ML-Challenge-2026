@@ -1,0 +1,28 @@
+# Regenerable pipeline artifacts -- every file here is either recreated by
+# running the pipeline (see code/business_entity_resolution/README.md) or
+# is per-machine/large enough to break a git push outright. Parquet caches
+# alone run 225MB-1.3GB each, over GitHub's 100MB hard file limit.
+code/business_entity_resolution/cache/
+output/
+
+# The raw dataset (~2.3GB) is provided by the contest separately -- it's
+# not something this repo should carry a copy of. Place it at
+# student_resource/dataset/ (sibling of code/) on whatever machine runs
+# the pipeline; every script resolves this path relative to its own
+# location, not a hardcoded absolute path, so this works unmodified after
+# a clone.
+dataset/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.Python
+*.egg-info/
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/

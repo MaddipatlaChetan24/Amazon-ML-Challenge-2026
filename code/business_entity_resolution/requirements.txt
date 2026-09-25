@@ -1,0 +1,20 @@
+# Python 3.13.9. Stdlib-heavy by design (see README.md for why) -- these
+# are the only non-stdlib dependencies, all MIT/BSD/Apache-2.0-licensed.
+pandas==2.3.3
+numpy==2.3.5
+pyarrow==21.0.0
+jellyfish==1.2.1
+scikit-learn==1.7.2
+joblib==1.5.2
+psutil==7.0.0
+
+# Only needed for embeddings.py (the multilingual embedding_cosine feature).
+# The embedding MODEL itself (paraphrase-multilingual-MiniLM-L12-v2,
+# ~118M params) is Apache-2.0 -- well under the contest's 8B-parameter cap.
+# huggingface_hub is pinned >=1.5,<2.0: the environment this was built in
+# had an old 0.25.2 that's incompatible with this sentence-transformers
+# version (ImportError on is_offline_mode), and a naive `pip install -U`
+# overshoots to 2.x which transformers/tokenizers in this stack don't
+# support either -- if you hit either error, reinstall with the range below.
+sentence-transformers==5.6.0
+huggingface_hub>=1.5.0,<2.0.0
