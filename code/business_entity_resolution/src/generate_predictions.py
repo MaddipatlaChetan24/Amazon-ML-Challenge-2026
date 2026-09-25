@@ -20,9 +20,9 @@ import joblib
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(__file__))
-from build_features import build_features_for_split
+from build_features import build_features_for_split, add_ambiguity_features
 from features import FEATURE_NAMES, AMBIGUITY_FEATURE_NAMES
-from build_features import add_ambiguity_features
+from train_model import bucket_for_count
 
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "cache")
 DATASET_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "..", "dataset")
@@ -69,8 +69,14 @@ def main():
 
     print("loading trained model...", flush=True)
     bundle = joblib.load(f"{CACHE_DIR}/matching_model.joblib")
-    model, threshold = bundle["model"], bundle["threshold"]
-    print(f"  threshold = {threshold}", flush=True)
+    model = bundle["model"]
+    global_threshold = bundle["threshold"]
+    bucket_thresholds = bundle.get("bucket_thresholds")  # None if an older global-only model was loaded
+    if bucket_thresholds:
+        print(f"  per-candidate-count-bucket thresholds: {bucket_thresholds}", flush=True)
+    else:
+        print(f"  no bucket thresholds in this model file -- falling back to global threshold "
+              f"= {global_threshold}", flush=True)
 
     print(f"\nbuilding test feature table (all countries, top_k={args.top_k})...", flush=True)
     t0 = time.time()
@@ -92,7 +98,17 @@ def main():
     feat_df["prob"] = probs
     print(f"scored in {time.time()-t0:.1f}s", flush=True)
 
-    matched = feat_df[feat_df["prob"] >= threshold][["source1_entity_id", "candidate_entity_id", "prob"]]
+    if bucket_thresholds:
+        # Bucket by candidate count -- same definition used in training
+        # (see train_model.py), so an entity's threshold depends only on how
+        # much blocking "competition" it has, which is known at inference
+        # time (no label needed).
+        group_size = feat_df.groupby("source1_entity_id")["candidate_entity_id"].transform("size")
+        entity_threshold = group_size.apply(lambda n: bucket_thresholds.get(bucket_for_count(n), global_threshold))
+    else:
+        entity_threshold = global_threshold
+
+    matched = feat_df[feat_df["prob"] >= entity_threshold][["source1_entity_id", "candidate_entity_id", "prob"]]
     print(f"pairs above threshold (pre-reconciliation): {len(matched):,}", flush=True)
     matched = reconcile_one_to_one(matched)
     print(f"pairs after 1-to-1 reconciliation: {len(matched):,}", flush=True)
