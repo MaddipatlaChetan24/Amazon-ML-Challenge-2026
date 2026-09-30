@@ -1,6 +1,6 @@
 ## Special Thanks
 
-A special thanks to our collaborators:
+A special thanks to our team:
 
 - **Sahil Pareek** ([@SAHIL9581](https://github.com/SAHIL9581))
 - **Varshith Vankadari** ([@Dev-By-Varshith](https://github.com/Dev-By-Varshith))
