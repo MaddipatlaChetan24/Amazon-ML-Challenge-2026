@@ -6,6 +6,10 @@ In large-scale commercial platforms, business identity data arrives from multipl
 
 Source 1 is the deduplicated reference source. Your task is to find all matching records from Source 2 and Source 3 for each Source 1 entity. A Source 1 entity may match zero, one, or many records from Source 2 and Source 3.
 
+### Our Solution Architecture
+
+![Solution architecture](docs/architecture.png)
+
 ### File Format
 
 **All files in this challenge are tab-separated (`.tsv`), and your submissions must be tab-separated too.** Tabs are used because business addresses and the ID list columns both contain commas. Read them with an explicit tab separator, for example:
