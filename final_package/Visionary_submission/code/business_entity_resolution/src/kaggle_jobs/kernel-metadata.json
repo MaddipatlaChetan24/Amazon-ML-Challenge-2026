@@ -1,0 +1,13 @@
+{
+  "id": "maddipatlachetan/dense-trainq-search",
+  "title": "dense-trainq-search",
+  "code_file": "run_trainq.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_internet": true,
+  "dataset_sources": ["maddipatlachetan/dense-kit", "maddipatlachetan/dense-trainq"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

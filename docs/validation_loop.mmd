@@ -1,0 +1,10 @@
+flowchart LR
+    TR["Training businesses<br/>(500K per country)"] --> SPLIT{"Fixed list of<br/>99,993 validation<br/>businesses"}
+    SPLIT -- "train side" --> FIT["Train classifier<br/>and re-checkers"]
+    SPLIT -- "held out" --> EVAL["Exact contest macro F0.5<br/>against the FULL ground truth<br/>(blocking misses count as errors)"]
+    FIT --> EVAL
+    EVAL --> CEIL["Blocking ceiling<br/>(perfect classifier on these candidates)"]
+    EVAL --> DEC{"Better than the<br/>previous version?"}
+    DEC -- "yes" --> KEEP["Keep · predict test ·<br/>official validator · upload"]
+    DEC -- "no" --> DROP["Reject · record why"]
+    KEEP --> LB["Leaderboard score<br/>(~0.013–0.016 below validation)"]

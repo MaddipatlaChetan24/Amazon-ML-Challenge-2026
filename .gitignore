@@ -26,3 +26,9 @@ __pycache__/
 # Editor
 .vscode/
 .idea/
+submissions/
+
+# Bulk hand-off bundles (parquet/zip files over GitHub's 100MB limit)
+teammate_pack/
+teammate_pack.zip
+*.zip

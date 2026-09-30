@@ -1,0 +1,69 @@
+flowchart TD
+    subgraph DATA["Input data"]
+        S1["Source 1<br/>clean reference businesses"]
+        S23["Sources 2 and 3<br/>noisy records, decoys, Indian scripts"]
+        GT["train_ground_truth.tsv<br/>(training only)"]
+    end
+
+    subgraph PREP["1 · Cleaning and precomputed vectors"]
+        CLEAN["Text cleaning<br/>legal forms, aliases, website names,<br/>address abbreviations, digit tokens"]
+        TRANS["Transliteration of Indian scripts<br/>+ honorific / legal-word removal"]
+        VEC["Character-trigram vectors<br/>(name and address, per record)"]
+        EMB["Multilingual name embeddings<br/>MiniLM-L12, Apache-2.0"]
+    end
+
+    subgraph BLOCK["2 · Blocking: find ~60 candidates per business"]
+        IDX["Inverted indexes per country<br/>name words · address words · digits · number+word keys"]
+        POOL["Retrieved pool<br/>(~5,500 records per business)"]
+        LANES["Three ranking lanes<br/>top 15 name · top 10 address · top 10 combined"]
+        RERANK["Trigram re-rank of the whole pool<br/>top 40 + reserved slots:<br/>5 empty-address, 10 Indian-script"]
+        REV["Reverse retrieval (v9)<br/>each record's top-3 businesses"]
+        CANDS["Candidate set<br/>≈ 60–68 per business"]
+    end
+
+    subgraph FEAT["3 · Pair features (~38)"]
+        F1["Name and address similarities<br/>Jaccard, Jaro-Winkler, n-grams, containment"]
+        F2["Post-hoc features<br/>transliterated-name and address trigram cosine,<br/>embedding cosine, number prefix/suffix match,<br/>close-but-different number (decoy signal)"]
+        F3["Ambiguity features per business<br/>rank, gaps, z-score, group stats"]
+    end
+
+    subgraph MODEL["4 · Scoring"]
+        GBDT["Gradient-boosted trees<br/>match probability for every pair"]
+        STACK["Stacked second stage (optional)<br/>adds per-business probability statistics"]
+        BAND{"Probability<br/>between 0.01 and 0.99?"}
+        CE["Re-checker: fine-tuned transformers<br/>read both raw records side by side<br/>(MiniLM + XLM-RoBERTa ensemble)"]
+        COMB["Logistic combiner<br/>classifier logit + re-checker logits"]
+    end
+
+    subgraph DECIDE["5 · Decision"]
+        THR["Threshold chosen on validation<br/>(exact contest macro F0.5)"]
+        RECON["1-to-1 reconciliation<br/>each record kept by its best business only"]
+    end
+
+    subgraph OUT["Outputs"]
+        MR["matching_results.tsv<br/>(leaderboard)"]
+        CP["candidate_pairs.tsv<br/>(final package)"]
+    end
+
+    S1 --> CLEAN
+    S23 --> CLEAN
+    CLEAN --> TRANS --> VEC
+    CLEAN --> EMB
+    CLEAN --> IDX --> POOL --> LANES --> CANDS
+    POOL --> RERANK --> CANDS
+    VEC --> RERANK
+    VEC --> REV --> CANDS
+    CANDS --> CP
+    CANDS --> F1 --> F3
+    VEC --> F2
+    EMB --> F2
+    F1 --> GBDT
+    F2 --> GBDT
+    F3 --> GBDT
+    GT -. labels for training .-> GBDT
+    GT -. labels for training .-> CE
+    GBDT --> STACK --> BAND
+    GBDT --> BAND
+    BAND -- "yes (~3% of pairs)" --> CE --> COMB --> THR
+    BAND -- "no" --> THR
+    THR --> RECON --> MR
